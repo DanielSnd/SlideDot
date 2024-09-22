@@ -1,10 +1,17 @@
 # Godot 4+ specific ignores
-.godot/
-
-# Godot-specific ignores
-.import/
-export.cfg
+.godot/shader_cache/
+.godot/imported/
+.godot/exported/
+.godot/editor/
+.godot/*.cfg
 export_presets.cfg
+addons/godotopenxrvendors/
+Local/
+Builds/
+Build/
+DemoBuilds/
+DemoBuild/
+mono/
 
 # Imported translations (automatically generated from CSV files)
 *.translation
