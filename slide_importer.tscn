@@ -1,0 +1,94 @@
+[gd_scene load_steps=4 format=3 uid="uid://cffnhvqc1rkjc"]
+
+[ext_resource type="Script" path="res://slide_importer.gd" id="1_kjrcd"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0j15j"]
+bg_color = Color(0.0823529, 0.0862745, 0.113725, 1)
+expand_margin_bottom = 10.0
+
+[sub_resource type="CodeHighlighter" id="CodeHighlighter_y28an"]
+number_color = Color(0.617753, 0.8503, 0.942566, 1)
+symbol_color = Color(0.645871, 0.852534, 0.571299, 1)
+function_color = Color(0.74558, 0.74558, 0.74558, 1)
+member_variable_color = Color(0.830335, 0.830335, 0.830335, 1)
+
+[node name="SlideImporter" type="CanvasLayer"]
+script = ExtResource("1_kjrcd")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -62.0
+offset_top = -35.0
+offset_right = 62.0
+offset_bottom = 35.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0636754, 0.0673831, 0.0896311, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_0j15j")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/Panel"]
+layout_mode = 2
+offset_top = 4.0
+offset_right = 1280.0
+offset_bottom = 35.0
+
+[node name="EditorMenuButtons" type="MenuButton" parent="VBoxContainer/Panel/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_hover_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.435153, 0.666517, 0.739496, 1)
+theme_override_colors/font_color = Color(0.733005, 0.733005, 0.733005, 1)
+theme_override_font_sizes/font_size = 15
+text = "File"
+
+[node name="Control" type="Control" parent="VBoxContainer/Panel/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LeftCodeEdit" type="CodeEdit" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/word_highlighted_color = Color(0.278394, 0.336247, 0.4274, 1)
+theme_override_colors/current_line_color = Color(0.133759, 0.14289, 0.175695, 1)
+theme_override_colors/background_color = Color(0.0705882, 0.0745098, 0.0980392, 1)
+theme_override_colors/font_placeholder_color = Color(0.226707, 0.226707, 0.226707, 1)
+theme_override_colors/font_color = Color(0.776471, 0.776471, 0.784314, 1)
+theme_override_colors/selection_color = Color(0.215686, 0.333333, 0.498039, 1)
+theme_override_colors/font_selected_color = Color(0.68214, 0.682133, 0.692124, 1)
+theme_override_colors/caret_color = Color(0.733005, 0.733005, 0.733005, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_colors/line_number_color = Color(0.194349, 0.194349, 0.194349, 1)
+theme_override_colors/executing_line_color = Color(0.223103, 0.223103, 0.223103, 1)
+theme_override_colors/brace_mismatch_color = Color(0.576471, 0, 0, 1)
+theme_override_colors/folded_code_region_color = Color(0.548963, 0.548963, 0.548963, 1)
+theme_override_colors/code_folding_color = Color(0.533037, 0.533037, 0.533037, 1)
+placeholder_text = "Insert markup quiz here."
+wrap_mode = 1
+scroll_smooth = true
+scroll_past_end_of_file = true
+syntax_highlighter = SubResource("CodeHighlighter_y28an")
+highlight_all_occurrences = true
+line_folding = true
+gutters_draw_line_numbers = true
+auto_brace_completion_enabled = true
+auto_brace_completion_highlight_matching = true
+
+[node name="FileDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+auto_translate_mode = 1
+size = Vector2i(208, 163)

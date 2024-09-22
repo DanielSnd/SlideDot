@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://dmwabontlvfak"]
+
+[ext_resource type="Script" path="res://ConsoleDisplay.gd" id="1_x13ta"]
+
+[node name="ConsoleDisplay" type="CodeEdit"]
+offset_right = 14.0
+offset_bottom = 14.0
+theme_override_colors/font_placeholder_color = Color(0.716296, 0.716296, 0.716296, 1)
+theme_override_colors/font_readonly_color = Color(0.775063, 0.775063, 0.775063, 1)
+theme_override_colors/font_color = Color(0.76662, 0.76662, 0.76662, 1)
+indent_wrapped_lines = true
+script = ExtResource("1_x13ta")

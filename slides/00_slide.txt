@@ -1,0 +1,6 @@
+# GPresent
+
+ F1 to open slide editor.
+
+=> Code
+Console.WriteLine("Boop");

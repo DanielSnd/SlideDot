@@ -1,0 +1,124 @@
+[gd_scene load_steps=7 format=3 uid="uid://btsx5muuwu7km"]
+
+[ext_resource type="Script" path="res://code/slidemanager.gd" id="1_fdln1"]
+[ext_resource type="Script" path="res://bg.gd" id="2_gf6w1"]
+[ext_resource type="Script" path="res://SpinWheel.gd" id="3_55q2b"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_potlk"]
+bg_color = Color(0.92549, 0.941176, 0.94902, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_avypu"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.0705882, 0.0745098, 0.0980392, 1)
+expand_margin_left = 200.0
+
+[sub_resource type="CodeHighlighter" id="CodeHighlighter_xcn8v"]
+number_color = Color(0.541721, 0.690846, 1, 1)
+
+[node name="SlideManager" type="CanvasLayer"]
+script = ExtResource("1_fdln1")
+
+[node name="Control" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Panel" type="Panel" parent="Control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -5.0
+offset_top = -5.0
+offset_right = 5.0
+offset_bottom = 5.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_potlk")
+
+[node name="BG" type="TextureRect" parent="Control"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -5.0
+offset_top = -5.0
+offset_right = 5.0
+offset_bottom = 5.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+expand_mode = 1
+script = ExtResource("2_gf6w1")
+
+[node name="SliderHolderHolder" type="Control" parent="Control"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SliderHolder" type="MarginContainer" parent="Control/SliderHolderHolder"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 15
+
+[node name="SpinWheel" type="Control" parent="Control"]
+unique_name_in_owner = true
+layout_mode = 1
+anchor_top = 0.459028
+anchor_bottom = 0.459028
+offset_left = -500.0
+offset_top = -130.5
+offset_right = -239.0
+offset_bottom = 130.5
+grow_vertical = 2
+script = ExtResource("3_55q2b")
+metadata/_edit_use_anchors_ = true
+
+[node name="SpinContentsContainer" type="Panel" parent="Control"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_right = -150.0
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_avypu")
+
+[node name="SpinContents" type="CodeEdit" parent="Control/SpinContentsContainer"]
+unique_name_in_owner = true
+clip_contents = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/background_color = Color(0.0705882, 0.0745098, 0.0980392, 1)
+theme_override_colors/font_placeholder_color = Color(0.811765, 0.811765, 0.811765, 1)
+theme_override_colors/font_readonly_color = Color(0.811765, 0.811765, 0.811765, 1)
+theme_override_colors/font_color = Color(0.813258, 0.813258, 0.813258, 1)
+theme_override_font_sizes/font_size = 24
+syntax_highlighter = SubResource("CodeHighlighter_xcn8v")

@@ -1,0 +1,11 @@
+[gd_resource type="FontVariation" load_steps=2 format=3 uid="uid://ctvjtnadakg0x"]
+
+[ext_resource type="FontFile" uid="uid://dpvd7cc2arc5x" path="res://ui/Inter-VariableFont_slnt,wght.ttf" id="1_fhwro"]
+
+[resource]
+base_font = ExtResource("1_fhwro")
+variation_embolden = 0.55
+spacing_glyph = 1
+spacing_space = 1
+spacing_top = 1
+spacing_bottom = 1

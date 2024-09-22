@@ -1,0 +1,6 @@
+[gd_resource type="FontVariation" load_steps=2 format=3 uid="uid://c7c0xfv7ghkru"]
+
+[ext_resource type="SystemFont" uid="uid://r1c6dx0att0t" path="res://monospaced.tres" id="1_8phg6"]
+
+[resource]
+base_font = ExtResource("1_8phg6")
