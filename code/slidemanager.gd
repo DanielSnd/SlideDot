@@ -1,5 +1,3 @@
-## TODO: TEACH ABOUT BREAKPOINTS SO THEY CAN FOLLOW THE FLOW OF CODE
-
 class_name SlideManager
 extends CanvasLayer
 @onready var slider_holder = %SliderHolder
@@ -52,7 +50,8 @@ func clicked_bg():
 		%SliderHolder.grab_focus()
 
 func _ready():
-	YSave.request_load()
+	if ClassDB.class_exists(&"YSave"):
+		ClassDB.class_call_static_method(&"YSave",&"request_load")
 	Engine.max_fps = 30
 	load_slides()
 	show_slide(current_slide_index)
@@ -67,13 +66,13 @@ func spin():
 	if spin_wheel.has_meta("animating"):
 		return
 
-	var scYtwn := YTween.create_unique_tween(spin_wheel)
+	var scYtwn := create_tween()
 	if spin_wheel.position.x < -0.1:
 		set_segments_spin_wheel()
 		spin_wheel.current_rotation = randf_range(-120.0,120.0)
 		spin_wheel.set_meta("animating", true)
 		spin_wheel.visible = true
-		scYtwn.tween_property(spin_wheel, "position:x", 0, 2.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK, 1.82)
+		scYtwn.tween_property(spin_wheel, "position:x", 0, 2.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 		spin_wheel.queue_redraw()
 		await scYtwn.finished
 		spin_wheel.spin()
@@ -82,30 +81,34 @@ func spin():
 		spin_wheel.remove_meta("animating")
 	else:
 		spin_wheel.set_meta("animating", true)
-		scYtwn.tween_property(spin_wheel, "position:x", -400.0, 2.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK, 1.82)
+		scYtwn.tween_property(spin_wheel, "position:x", -400.0, 2.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
 		scYtwn.finished.connect(func(): spin_wheel.visible = false)
 		await scYtwn.finished
 		spin_wheel.remove_meta("animating")
 
+var spin_editor_tween:Tween
 func toggle_spin_code_editor():
-	var scYtwn := YTween.create_unique_tween(spin_contents.get_parent())
+	if is_instance_valid(spin_editor_tween) and spin_editor_tween.is_running():
+		spin_editor_tween.kill()
+	spin_editor_tween = create_tween()
 	if spin_contents.get_parent().position.x < -0.1:
-		if spin_contents.text.is_empty():
-			spin_contents.text = YSave.save_data.get("spincode","")
+		if spin_contents.text.is_empty() and Engine.get_singleton(&"YSave"):
+			spin_contents.text = Engine.get_singleton(&"YSave").save_data.get("spincode","")
 		spin_contents.get_parent().visible = true
-		scYtwn.tween_property(spin_contents.get_parent(), "position:x", 0, 2.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK, 1.82)
-		scYtwn.finished.connect(spin_contents.grab_focus)
+		spin_editor_tween.tween_property(spin_contents.get_parent(), "position:x", 0, 2.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+		spin_editor_tween.finished.connect(spin_contents.grab_focus)
 	else:
 		if get_viewport().gui_get_focus_owner() == spin_contents:
 			spin_contents.release_focus()
-		scYtwn.tween_property(spin_contents.get_parent(), "position:x", -400.0, 2.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK, 1.82)
-		scYtwn.finished.connect(func(): spin_contents.get_parent().visible = false)
-		YSave.save_data["spincode"] = spin_contents.text
-		YSave.request_save()
+		spin_editor_tween.tween_property(spin_contents.get_parent(), "position:x", -400.0, 2.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
+		spin_editor_tween.finished.connect(func(): spin_contents.get_parent().visible = false)
+		if Engine.has_singleton(&"YSave"):
+			Engine.get_singleton(&"YSave").save_data["spincode"] = spin_contents.text
+			Engine.get_singleton(&"YSave").request_save()
 
 func set_segments_spin_wheel():
-	if spin_contents.text.is_empty():
-		spin_contents.text = YSave.save_data.get("spincode","")
+	if spin_contents.text.is_empty() and Engine.has_singleton(&"YSave"):
+		spin_contents.text = Engine.get_singleton(&"YSave").save_data.get("spincode","")
 	var lines_spin:PackedStringArray = spin_contents.text.split("\n",false)
 	var spin_names:Array = []
 	for i in lines_spin:
@@ -256,7 +259,7 @@ func reveal_element(index: int, animate: bool = true):
 				if child in current_slide_elements:
 					await reveal_element(current_slide_elements.find(child), animate)
 		else:
-			var tween := YTween.create_unique_tween(element)
+			var tween := create_tween()
 			tween.tween_property(element, "modulate:a", 1.0, 0.5)
 			await tween.finished_or_killed
 		animating = false
@@ -363,8 +366,8 @@ func parse_slide_text(full_content:String):
 				finish_list(active_label, list_buffer)
 				in_list = false
 			continue
-		if active_label == null or (not is_instance_valid(active_label)):
-			active_label = YEngine.find_node_with_type(%SliderHolderHolder, "RichTextLabel")
+		#if active_label == null or (not is_instance_valid(active_label)):
+			#active_label = YEngine.find_node_with_type(%SliderHolderHolder, "RichTextLabel")
 		if active_label == null or (not is_instance_valid(active_label)):
 			execute_command("Text",0)
 		if (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("# "):
@@ -477,7 +480,7 @@ func parse_new_command(command_string:String, text_line:int):
 
 	if parts.size() > 1:
 		if parts[1].strip_edges()[0] == "[":
-			params["name"] = "%s%d" % [parts[0], rand_from_seed(YEngine.string_to_hash(last_parsed_slide_path) + text_line + command_string.length())[0]]
+			params["name"] = "%s%d" % [parts[0], rand_from_seed(last_parsed_slide_path.hash() + text_line + command_string.length())[0]]
 			params["set"] = parse_set_arguments(parts[1])
 		else:
 			var name_parts = (parts[1] as String).split(" ", false, 1)
@@ -485,20 +488,20 @@ func parse_new_command(command_string:String, text_line:int):
 			#print("Name parts ",name_parts," full name ",full_name)
 			if full_name.ends_with("::"):
 				# Generate a random name
-				params["name"] = "%s%d" % [parts[0], rand_from_seed(YEngine.string_to_hash(last_parsed_slide_path)  + text_line+ command_string.length())[0]]
+				params["name"] = "%s%d" % [parts[0], rand_from_seed(last_parsed_slide_path.hash()  + text_line+ command_string.length())[0]]
 				params["parent"] = full_name.trim_suffix("::")
 			elif "::" in full_name:
 				var name_split = full_name.split("::")
 				params["parent"] = name_split[0]
 				params["name"] = name_split[1]
 			else:
-				params["name"] = full_name if not full_name.is_empty() else "%s%d" % [parts[0], rand_from_seed(YEngine.string_to_hash(last_parsed_slide_path) + text_line + command_string.length())[0]]
+				params["name"] = full_name if not full_name.is_empty() else "%s%d" % [parts[0], rand_from_seed(last_parsed_slide_path.hash() + text_line + command_string.length())[0]]
 
 			if name_parts.size() > 1:
 				params["set"] = parse_set_arguments(name_parts[1])
 	else:
 		# No name or parent specified, use default
-		params["name"] = "%s%d" % [parts[0], rand_from_seed(YEngine.string_to_hash(last_parsed_slide_path) + text_line + command_string.length())[0]]
+		params["name"] = "%s%d" % [parts[0], rand_from_seed(last_parsed_slide_path.hash() + text_line + command_string.length())[0]]
 
 	# If no parent is specified, find the last VBox or HBox
 	if not "parent" in params:
@@ -944,9 +947,10 @@ func swap_fullscreen_mode():
 			(codeedit.get_meta("previous_parent") as Node).move_child(codeedit,codeedit.get_meta("previndex"))
 			codeedit.size = codeedit.get_meta("prevsize")
 			codeedit.position = codeedit.get_meta("prevposition")
-			var found_node = YEngine.find_node_with_type(codeedit,"CodeEdit")
-			if is_instance_valid(found_node):
-				found_node.grab_focus()
+			if Engine.has_singleton(&"YEngine"):
+				var found_node = Engine.get_singleton(&"YEngine").find_node_with_type(codeedit,"CodeEdit")
+				if is_instance_valid(found_node):
+					found_node.grab_focus()
 			return
 		else:
 			codeedit.set_meta("previous_parent",codeedit.get_parent())
@@ -957,9 +961,10 @@ func swap_fullscreen_mode():
 			%Control.add_child(codeedit)
 			codeedit.size = %Control.size
 			codeedit.position = %Control.position
-			var found_node = YEngine.find_node_with_type(codeedit,"CodeEdit")
-			if is_instance_valid(found_node):
-				found_node.grab_focus()
+			if Engine.has_singleton(&"YEngine"):
+				var found_node = Engine.get_singleton(&"YEngine").find_node_with_type(codeedit,"CodeEdit")
+				if is_instance_valid(found_node):
+					found_node.grab_focus()
 			return
 	if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)

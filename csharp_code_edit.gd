@@ -12,7 +12,8 @@ signal compile_pressed
 
 @export var is_mouse_hovered:bool = false
 func on_prepare_save():
-	YSave.save_data["code"] = text
+	if Engine.has_singleton("YSave"):
+		Engine.get_singleton("YSave").save_data["code"] = text
 
 func _gui_input(event: InputEvent) -> void:
 	#if event is InputEventMouseButton and event.is_pressed():
@@ -97,11 +98,13 @@ func watch_for_locked_line_caret_change():
 
 func _handle_unicode_input(unicode_char, caret_index:int ):
 	if locked_to_line == -1:
-		handle_unicode_input_internal(unicode_char, caret_index)
+		if  self.has_method(&"handle_unicode_input_internal"):
+			call(&"handle_unicode_input_internal",unicode_char, caret_index)
 	else:
 		var current_text_line = get_line(get_caret_line(clamp(caret_index,0,get_caret_count())))
 		if current_text_line.is_empty() or not current_text_line.begins_with("  "):
-			handle_unicode_input_internal(unicode_char, caret_index)
+			if  self.has_method(&"handle_unicode_input_internal"):
+				call(&"handle_unicode_input_internal",unicode_char, caret_index)
 
 func idle_timer_procced():
 	#print("Idle timer procced")
@@ -202,7 +205,8 @@ func run_code_completion_request():
 func _ready():
 	mouse_entered.connect(func(): is_mouse_hovered = true)
 	mouse_exited.connect(func(): is_mouse_hovered = false)
-	YSave.prepare_save.connect(on_prepare_save)
+	if Engine.has_singleton("YSave"):
+		Engine.get_singleton("YSave").prepare_save.connect(on_prepare_save)
 	idle_timer = Timer.new()
 	gutters_draw_breakpoints_gutter = false
 	gutters_draw_executing_lines = false

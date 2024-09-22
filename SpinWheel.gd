@@ -48,13 +48,13 @@ func spin():
 	if is_spinning:
 		return
 	is_spinning = true
-	var ytwn: = YTween.create_unique_tween(self,3)
+	var ytwn: = create_tween()
 	for i in segment_names.size():
-		ytwn.parallel().tween_method(winner_tween_method.bind(i), segment_names[i][2], 0.0, 0.4).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK,1.2)
-	ytwn.parallel().tween_property(self,"spin_speed", randf_range(12, 24.2), 4.42).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK,1.88)
+		ytwn.parallel().tween_method(winner_tween_method.bind(i), segment_names[i][2], 0.0, 0.4).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	ytwn.parallel().tween_property(self,"spin_speed", randf_range(12, 24.2), 4.42).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
 	ytwn.tween_interval(2.0)
 	ytwn.chain().tween_property(self,"spin_speed", 0.1, 8.00).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-	ytwn.chain().tween_property(self,"spin_speed", 0.0, 2.00).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK,1.8)
+	ytwn.chain().tween_property(self,"spin_speed", 0.0, 2.00).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 	spin_starting = true
 	await ytwn.finished_or_killed
 	spin_starting = false
@@ -73,11 +73,11 @@ func determine_winner():
 		if segment_names[i][1] > best_aligned:
 			best_aligned = segment_names[i][1]
 			winner = i
-	print(YTime.time," Winner: " + segment_names[winner][0])
+	#print(YTime.time," Winner: " + segment_names[winner][0])
 	winner_selected_emit.emit(segment_names[winner][0])
-	var ytwn: = YTween.create_unique_tween(self,4)
+	var ytwn: = create_tween()
 	for i in segment_names.size():
-		ytwn.parallel().tween_method(winner_tween_method.bind(i), segment_names[i][2], 1.0 if winner == i else -1.0, 1.42).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK,1.88)
+		ytwn.parallel().tween_method(winner_tween_method.bind(i), segment_names[i][2], 1.0 if winner == i else -1.0, 1.42).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 
 
 var best_dot_right:float = 0.0
