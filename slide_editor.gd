@@ -53,6 +53,7 @@ func _ready():
 
 	# Connect the file_selected signal to our callback function
 	file_dialog.files_selected.connect(_on_file_selected)
+	file_dialog.file_selected.connect(_on_file_selected)
 
 func open_save_dialog():
 	if file_dialog.visible:
@@ -71,7 +72,11 @@ func open_save_dialog():
 	# Show the dialog
 	file_dialog.popup_centered_ratio(0.7)
 
-func _on_file_selected(path: String):
+func _on_file_selected(path):
+	if path is PackedStringArray:
+		if path.is_empty():
+			return
+		path = path[0]
 	# This function will be called when a file is selected for saving
 	print("Selected path for saving: ", path)
 	currently_editing_path = path
