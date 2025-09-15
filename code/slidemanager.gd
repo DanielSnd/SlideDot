@@ -50,8 +50,8 @@ func clicked_bg():
 		%SliderHolder.grab_focus()
 
 func _ready():
-	if ClassDB.class_exists(&"YSave"):
-		ClassDB.class_call_static_method(&"YSave",&"request_load")
+	if Engine.has_singleton(&"YSave"):
+		Engine.get_singleton(&"YSave").request_load()
 	Engine.max_fps = 30
 	load_slides()
 	show_slide(current_slide_index)
@@ -261,7 +261,7 @@ func reveal_element(index: int, animate: bool = true):
 		else:
 			var tween := create_tween()
 			tween.tween_property(element, "modulate:a", 1.0, 0.5)
-			await tween.finished_or_killed
+			await tween.finished
 		animating = false
 	elif is_instance_valid(element):
 		element.modulate.a = 1.0
@@ -584,15 +584,15 @@ func split_preserving_quotes(input_string):
 	return result
 
 func request_compile(code_edit_requesting:SharpEditorPanel):
-	if (not ClassDB.class_exists(&"RuntimeMono")) or is_compiling:
+	if (not Engine.has_singleton(&"RuntimeMono")) or is_compiling:
 		return
 	is_compiling = true
 	started_compiling.emit()
 	pressed_desired = null
 	code_edit_requesting.modulate.a = 0.4
-	var had_console_open:bool = ClassDB.class_call_static_method(&"RuntimeMono",&"has_open_console")
+	var had_console_open:bool = Engine.get_singleton(&"RuntimeMono").has_open_console()
 	if  had_console_open:
-		ClassDB.class_call_static_method(&"RuntimeMono",&"clear_console")
+		Engine.get_singleton(&"RuntimeMono").clear_console()
 	for i in 3:
 		await get_tree().process_frame
 	var started_compiling_time = Time.get_ticks_msec()
@@ -624,9 +624,9 @@ var pressed_desired = null
 signal finished_call(call_id:int)
 
 func add_csharp_calls():
-	if not ClassDB.class_exists(&"RuntimeMono"):
+	if not Engine.has_singleton(&"RuntimeMono"):
 		return
-	ClassDB.class_call_static_method(&"RuntimeMono",&"add_managed_callable","compilation_done", compilation_completed_from_csharp)
+	Engine.get_singleton(&"RuntimeMono").add_managed_callable("compilation_done", compilation_completed_from_csharp)
 
 func compilation_completed_from_csharp(_param_info:String):
 	compilation_finished_csharp.emit.call_deferred()
@@ -687,7 +687,7 @@ func execute_method():
 
 	#prints("Execute method",pressed_desired.method_name,pressed_desired.method_class_name,pressed_desired.method_namespace_name, pressed_desired.has_console_request)
 	if pressed_desired.has_console_request:
-		ClassDB.class_call_static_method(&"RuntimeMono",&"create_console")
+		ClassDB.class_call_static(&"RuntimeMono",&"create_console")
 		for i in 2:
 			await get_tree().process_frame
 

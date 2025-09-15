@@ -1,8 +1,8 @@
 [gd_scene load_steps=7 format=3 uid="uid://btsx5muuwu7km"]
 
-[ext_resource type="Script" path="res://code/slidemanager.gd" id="1_fdln1"]
-[ext_resource type="Script" path="res://bg.gd" id="2_gf6w1"]
-[ext_resource type="Script" path="res://SpinWheel.gd" id="3_55q2b"]
+[ext_resource type="Script" uid="uid://cqko8hsqxeaiv" path="res://code/slidemanager.gd" id="1_fdln1"]
+[ext_resource type="Script" uid="uid://ddx1jcvjd2i16" path="res://bg.gd" id="2_gf6w1"]
+[ext_resource type="Script" uid="uid://dqn8wdg5e11kl" path="res://SpinWheel.gd" id="3_55q2b"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_potlk"]
 bg_color = Color(0.92549, 0.941176, 0.94902, 1)
@@ -116,9 +116,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/background_color = Color(0.0705882, 0.0745098, 0.0980392, 1)
-theme_override_colors/font_placeholder_color = Color(0.811765, 0.811765, 0.811765, 1)
-theme_override_colors/font_readonly_color = Color(0.811765, 0.811765, 0.811765, 1)
 theme_override_colors/font_color = Color(0.813258, 0.813258, 0.813258, 1)
+theme_override_colors/font_readonly_color = Color(0.811765, 0.811765, 0.811765, 1)
+theme_override_colors/font_placeholder_color = Color(0.811765, 0.811765, 0.811765, 1)
+theme_override_colors/background_color = Color(0.0705882, 0.0745098, 0.0980392, 1)
 theme_override_font_sizes/font_size = 24
 syntax_highlighter = SubResource("CodeHighlighter_xcn8v")
