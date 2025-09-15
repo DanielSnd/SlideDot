@@ -44,14 +44,15 @@ var revealed_elements = 0
 var animating = false
 var visited_slides = {}
 
+var has_maze:bool = false
 func clicked_bg():
 	if editor_focused:
 		editor_focused = false
 		%SliderHolder.grab_focus()
 
 func _ready():
-	if ClassDB.class_exists(&"YSave"):
-		ClassDB.class_call_static_method(&"YSave",&"request_load")
+	if Engine.has_singleton(&"YSave"):
+		Engine.get_singleton(&"YSave").request_load()
 	Engine.max_fps = 30
 	load_slides()
 	show_slide(current_slide_index)
@@ -72,7 +73,7 @@ func spin():
 		spin_wheel.current_rotation = randf_range(-120.0,120.0)
 		spin_wheel.set_meta("animating", true)
 		spin_wheel.visible = true
-		scYtwn.tween_property(spin_wheel, "position:x", 0, 2.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+		scYtwn.tween_property(spin_wheel, "position:x", 0, 0.64).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 		spin_wheel.queue_redraw()
 		await scYtwn.finished
 		spin_wheel.spin()
@@ -81,7 +82,7 @@ func spin():
 		spin_wheel.remove_meta("animating")
 	else:
 		spin_wheel.set_meta("animating", true)
-		scYtwn.tween_property(spin_wheel, "position:x", -400.0, 2.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
+		scYtwn.tween_property(spin_wheel, "position:x", -400.0, 0.32).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
 		scYtwn.finished.connect(func(): spin_wheel.visible = false)
 		await scYtwn.finished
 		spin_wheel.remove_meta("animating")
@@ -95,12 +96,12 @@ func toggle_spin_code_editor():
 		if spin_contents.text.is_empty() and Engine.get_singleton(&"YSave"):
 			spin_contents.text = Engine.get_singleton(&"YSave").save_data.get("spincode","")
 		spin_contents.get_parent().visible = true
-		spin_editor_tween.tween_property(spin_contents.get_parent(), "position:x", 0, 2.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+		spin_editor_tween.tween_property(spin_contents.get_parent(), "position:x", 0, 0.8).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 		spin_editor_tween.finished.connect(spin_contents.grab_focus)
 	else:
 		if get_viewport().gui_get_focus_owner() == spin_contents:
 			spin_contents.release_focus()
-		spin_editor_tween.tween_property(spin_contents.get_parent(), "position:x", -400.0, 2.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
+		spin_editor_tween.tween_property(spin_contents.get_parent(), "position:x", -400.0, 0.4).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
 		spin_editor_tween.finished.connect(func(): spin_contents.get_parent().visible = false)
 		if Engine.has_singleton(&"YSave"):
 			Engine.get_singleton(&"YSave").save_data["spincode"] = spin_contents.text
@@ -259,9 +260,12 @@ func reveal_element(index: int, animate: bool = true):
 				if child in current_slide_elements:
 					await reveal_element(current_slide_elements.find(child), animate)
 		else:
-			var tween := create_tween()
+			var tween = create_tween() if not Engine.has_singleton(&"YTween") else Engine.get_singleton(&"YTween").create_unique_tween(self,3)
 			tween.tween_property(element, "modulate:a", 1.0, 0.5)
-			await tween.finished_or_killed
+			if Engine.has_singleton(&"YTween"):
+				await tween.finished_or_killed
+			else:
+				await tween.finished
 		animating = false
 	elif is_instance_valid(element):
 		element.modulate.a = 1.0
@@ -271,7 +275,6 @@ func reveal_element(index: int, animate: bool = true):
 			for child in element.get_children():
 				if child in current_slide_elements:
 					reveal_element(current_slide_elements.find(child), animate)
-
 	revealed_elements = max(revealed_elements, index + 1)
 
 func reveal_all_elements():
@@ -296,6 +299,18 @@ func clear_current_slide():
 	if is_debugging:
 		print("Cleared current slide")
 
+
+var last_set_holder_scale_string:String = "1.0"
+func set_holder_scale(scale:String):
+	last_set_holder_scale_string = scale
+	var scale_amount:float = ((scale.to_float() if scale.is_valid_float() else 1.0) * default_holder_scale)
+	(%SliderHolder as Control).pivot_offset = Vector2(0.0,0.0)
+	%SliderHolder.scale = Vector2.ONE * ((scale.to_float() if scale.is_valid_float() else 1.0) * default_holder_scale)
+	if scale_amount < 0.99:
+		await get_tree().process_frame
+		%SliderHolder.position = Vector2.ZERO
+
+
 func set_holder_margins(margins:String):
 	var split_margins = margins.split(",", false)
 	var margin_sides:Array[String] = ["margin_left","margin_top","margin_right","margin_bottom"]
@@ -311,6 +326,7 @@ func set_holder_margins(margins:String):
 		for i in margin_sides.size():
 			%SliderHolder.add_theme_constant_override(margin_sides[i], split_margins[i].to_int())
 
+var default_holder_scale:float = 1.0
 var last_parsed_slide_path:String = ""
 func parse_slide_file(file_path):
 	var file = FileAccess.open(file_path, FileAccess.READ)
@@ -323,15 +339,27 @@ func parse_slide_file(file_path):
 	var full_content = file.get_as_text()
 	if cached_edited_path.has(file_path):
 		full_content = cached_edited_path[file_path]
+	#await get_tree().process_frame
+	set_holder_scale("1.0")
+	#print(slider_holder.has_node("Main")," has Main")
+	if slider_holder.has_node("Main"):
+		var old_main:Control= slider_holder.get_node("Main")
+		if old_main != null:
+			old_main.name = "Old Main"
+			old_main.get_parent().remove_child(old_main)
+
+		#print(slider_holder.has_node("Main")," has Main after frame wait")
 	if (not full_content.is_empty()) and (not full_content.split("\n",false)[0].contains("=>")):
 		full_content = "%s%s" % ["""=> Margins 90,50,90,10
-=> VBOX
+=> VBOX Main
 => TEXT\n""",full_content]
 		if is_debugging:
 			print("Initial Command not found, added initial vbox container when parsing ",file_path)
+
 	parse_slide_text(full_content)
 
 var last_parsed_was_empty_line:bool = false
+
 func parse_slide_text(full_content:String):
 	var in_list:bool = false
 	var list_buffer:String = ""
@@ -342,7 +370,7 @@ func parse_slide_text(full_content:String):
 	#print(full_content)
 	# Split the content into lines for processing
 	var lines = full_content.split("\n")
-
+	var current_in_auto_generated_hbox:bool = false
 	for line_index in lines.size():
 		var original_line = lines[line_index]
 		var line = lines[line_index].strip_edges()
@@ -369,7 +397,35 @@ func parse_slide_text(full_content:String):
 		#if active_label == null or (not is_instance_valid(active_label)):
 			#active_label = YEngine.find_node_with_type(%SliderHolderHolder, "RichTextLabel")
 		if active_label == null or (not is_instance_valid(active_label)):
-			execute_command("Text",0)
+			execute_command("NEW TEXT", line_index)
+		#print("line begins with |#? %s" % line.begins_with("|#"))
+		if (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("|#"):
+			if in_list:
+				last_parsed_was_empty_line = false
+				finish_list(active_label, list_buffer)
+				in_list = false
+				list_buffer = ""
+			line = line.substr(1)
+			print(current_in_auto_generated_hbox)
+			if not current_in_auto_generated_hbox:
+				current_in_auto_generated_hbox = true
+				execute_command("NEW HBOX", line_index)
+			execute_command("NEW TEXT", line_index)
+			last_parsed_was_empty_line = false
+		elif current_in_auto_generated_hbox and (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("|||"):
+			if in_list:
+				last_parsed_was_empty_line = false
+				finish_list(active_label, list_buffer)
+				in_list = false
+				list_buffer = ""
+			if active_container != null and is_instance_valid(active_container) and active_container is HBoxContainer:
+				active_container = active_container.get_parent()
+			execute_command("NEW TEXT", line_index)
+			line = ""
+			lines[line_index] = line
+			original_line = ""
+			current_in_auto_generated_hbox = false
+			last_parsed_was_empty_line = false
 		if (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("# "):
 			original_line = "[color=468bbe][b][font_size=%d][font name=res://ui/LilitaOne-Regular.ttf embolden=0.5]%s[/font][/font_size][/b][/color]" % [(active_label).get_theme_font_size("bold_font_size") + 18, line.substr(2, -1)]
 			lines[line_index] = original_line
@@ -384,6 +440,50 @@ func parse_slide_text(full_content:String):
 			line = original_line
 		elif (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("##- "):
 			original_line = "[b][font_size=%d][font name=res://ui/LilitaOne-Regular.ttf embolden=0.3]%s[/font][/font_size][/b]" % [(active_label).get_theme_font_size("bold_font_size") + 12, line.substr(4, -1)]
+			lines[line_index] = original_line
+			line = original_line
+		elif (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("### "):
+			original_line = "[color=468bbe][b][font_size=%d][font name=res://ui/LilitaOne-Regular.ttf embolden=0.3]%s[/font][/font_size][/b][/color]" % [(active_label).get_theme_font_size("bold_font_size") + 7, line.substr(4, -1)]
+			lines[line_index] = original_line
+			line = original_line
+		elif (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("###- "):
+			original_line = "[b][font_size=%d][font name=res://ui/LilitaOne-Regular.ttf embolden=0.3]%s[/font][/font_size][/b]" % [(active_label).get_theme_font_size("bold_font_size") + 7, line.substr(5, -1)]
+			lines[line_index] = original_line
+			line = original_line
+		elif (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("#! "):
+			original_line = "[b][font_size=%d][color=#a8382b][font name=res://ui/LilitaOne-Regular.ttf embolden=0.5]%s[/font][/color][/font_size][/b]" % [(active_label).get_theme_font_size("bold_font_size") + 18, line.substr(3, -1)]
+			lines[line_index] = original_line
+			line = original_line
+		elif (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("##! "):
+			original_line = "[b][font_size=%d][color=#a8382b][font name=res://ui/LilitaOne-Regular.ttf embolden=0.3]%s[/font][/color][/font_size][/b]" % [(active_label).get_theme_font_size("bold_font_size") + 12, line.substr(4, -1)]
+			lines[line_index] = original_line
+			line = original_line
+		elif (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("###! "):
+			original_line = "[b][font_size=%d][color=#a8382b][font name=res://ui/LilitaOne-Regular.ttf embolden=0.3]%s[/font][/color][/font_size][/b]" % [(active_label).get_theme_font_size("bold_font_size") + 7, line.substr(5, -1)]
+			lines[line_index] = original_line
+			line = original_line
+		elif (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("#@ "):
+			original_line = "[b][font_size=%d][color=#853a84][font name=res://ui/LilitaOne-Regular.ttf embolden=0.5]%s[/font][/color][/font_size][/b]" % [(active_label).get_theme_font_size("bold_font_size") + 18, line.substr(3, -1)]
+			lines[line_index] = original_line
+			line = original_line
+		elif (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("##@ "):
+			original_line = "[b][font_size=%d][color=#853a84][font name=res://ui/LilitaOne-Regular.ttf embolden=0.3]%s[/font][/color][/font_size][/b]" % [(active_label).get_theme_font_size("bold_font_size") + 12, line.substr(4, -1)]
+			lines[line_index] = original_line
+			line = original_line
+		elif (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("###@ "):
+			original_line = "[b][font_size=%d][color=#853a84][font name=res://ui/LilitaOne-Regular.ttf embolden=0.3]%s[/font][/color][/font_size][/b]" % [(active_label).get_theme_font_size("bold_font_size") + 7, line.substr(5, -1)]
+			lines[line_index] = original_line
+			line = original_line
+		elif (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("#$ "):
+			original_line = "[b][font_size=%d][color=#009B77][font name=res://ui/LilitaOne-Regular.ttf embolden=0.5]%s[/font][/color][/font_size][/b]" % [(active_label).get_theme_font_size("bold_font_size") + 18, line.substr(3, -1)]
+			lines[line_index] = original_line
+			line = original_line
+		elif (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("##$ "):
+			original_line = "[b][font_size=%d][color=#009B77][font name=res://ui/LilitaOne-Regular.ttf embolden=0.3]%s[/font][/color][/font_size][/b]" % [(active_label).get_theme_font_size("bold_font_size") + 12, line.substr(4, -1)]
+			lines[line_index] = original_line
+			line = original_line
+		elif (not (active_label is ConsoleDisplay or active_label is CodeEdit)) and line.begins_with("###$ "):
+			original_line = "[b][font_size=%d][color=#009B77][font name=res://ui/LilitaOne-Regular.ttf embolden=0.3]%s[/font][/color][/font_size][/b]" % [(active_label).get_theme_font_size("bold_font_size") + 7, line.substr(5, -1)]
 			lines[line_index] = original_line
 			line = original_line
 
@@ -428,26 +528,29 @@ func create_ui_with_new_command_parse(command_text:String,parts:PackedStringArra
 	create_ui_element(parse_new_command(("%s %s" % [command_text,parts[1]]) if parts.size() > 1 else "%s%s%s" % [command_text, " " if not default_parts.is_empty() else "",default_parts],text_line), text_line)
 
 const POSSIBLE_CREATE_UI_COMMANDS = [
-	"LEFTTEXT" , "TEXT", "QRCODE", "CONSOLE", "VBOX", "HBOX", "ENDHBOX", "VBOX", "CODE", "TOPTEXT", "BOTTOMTEXT", "RIGHTTEXT", "RIGHTIMAGE", "LEFTIMAGE", "TEXTURERECT"
+	"LEFTTEXT" , "TEXT", "QRCODE", "CONSOLE", "VBOX", "HBOX", "ENDHBOX", "VBOX", "CODE", "TOPTEXT", "BOTTOMTEXT", "RIGHTTEXT", "RIGHTIMAGE", "LEFTIMAGE", "TEXTURERECT", "MAZE"
 ]
 
 const CREATE_REPLACE = {
 	"VBOX" : "VBoxContainer" ,
-	"HBOX" : "HBoxContainer", "TEXTLEFT" : "LEFTTEXT", "TEXTRIGHT" : "RIGHTTEXT", "TEXTTOP" : "TOPTEXT", "TEXTBOTTOM" : "BOTTOMTEXT"
+	"HBOX" : "HBoxContainer", "TEXTLEFT" : "LEFTTEXT", "TEXTRIGHT" : "RIGHTTEXT", "TEXTTOP" : "TOPTEXT", "TEXTBOTTOM" : "BOTTOMTEXT", "IMAGE" : "TEXTURERECT"
 }
 
 const CREATE_DEFAULTS = {
 	"VBOX" : "[anchors_preset = 15, anchor_right = 1.0, anchor_bottom = 1.0]",
 	"HBOX" : "[anchors_preset = 15, anchor_right = 1.0, anchor_bottom = 1.0, theme_override_constants/separation = 20]",
-	"CODE" : "[min_size_y = 300, code_font_size=18]"
+	"CODE" : "[min_size_y = 300, code_font_size=18, shows_compile=false]"
 }
 
 func execute_command(command, text_line:int):
 	var parts = command.split(" ", false, 1)
-	#prints("Command parts:",parts)
+	prints("Command parts: %s. Active Container %s Active Label %s" % [parts, active_container, active_label])
 	var cmd = parts[0].to_upper()
 	match cmd:
 		"ENDHBOX":
+			if active_container != null and is_instance_valid(active_container) and active_container is HBoxContainer:
+				active_container = active_container.get_parent()
+		"ENDVBOX":
 			if active_container != null and is_instance_valid(active_container) and active_container is HBoxContainer:
 				active_container = active_container.get_parent()
 		"NEW":
@@ -458,6 +561,8 @@ func execute_command(command, text_line:int):
 			%BG.texture = load(parts[1].strip_edges())
 		"SETMARGIN","SETMARGINS","MARGINS","MARGIN":
 			set_holder_margins(parts[1].strip_edges())
+		"SCALE":
+			set_holder_scale(parts[1].strip_edges())
 		_:
 			if not POSSIBLE_CREATE_UI_COMMANDS.has(cmd) and CREATE_REPLACE.has(cmd):
 				cmd = CREATE_REPLACE[cmd]
@@ -723,9 +828,11 @@ func create_ui_element(params, _text_line):
 		"VBOXCONTAINER","VBOX":
 			element = VBoxContainer.new()
 			active_container = element
+			#print("Active container vbox")
 		"HBOXCONTAINER","HBOX":
 			element = HBoxContainer.new()
 			active_container = element
+			#print("Active container hbox")
 		"QRCODE":
 			print(&"set" in params)
 			if &"set" in params and &"data" in params.set:
@@ -771,7 +878,16 @@ func create_ui_element(params, _text_line):
 			for i in ["bold_font_size", "bold_italics_font_size", "italics_font_size", "mono_font_size", "normal_font_size"]:
 				element.add_theme_font_size_override(i, font_size)
 			active_label = element
-
+		"MAZE":
+			element = load("res://maze.tscn").instantiate()
+			add_element_to_slider_holder_holder(element, Vector4(0.01,0.01,1.0,1.0), Control.PRESET_FULL_RECT)
+			element.set_meta("insta_appear",true)
+			await get_tree().process_frame
+			if is_instance_valid(element):
+				has_maze = true
+				(element as Control).tree_exiting.connect(func ():has_maze=false)
+				(element.commands as CodeEdit).focus_entered.connect(focused_code_editor.bind(element.commands, true))
+				(element.commands as CodeEdit).focus_exited.connect(focused_code_editor.bind(element.commands, false))
 		"LEFTIMAGE":
 			element = TextureRect.new()
 			add_element_to_slider_holder_holder(element, Vector4(0.0,0.0,0.5,1.0), Control.PRESET_LEFT_WIDE)
@@ -831,6 +947,10 @@ func create_ui_element(params, _text_line):
 			elif property == &"font_size" and &"text" in element:
 				for i in ["bold_font_size", "bold_italics_font_size", "italics_font_size", "mono_font_size", "normal_font_size"]:
 					element.add_theme_font_size_override(i, str(params.set[property]).to_int())
+			elif property == &"expand_horizontal" and &"size_flags_horizontal" in element:
+				element.set(&"size_flags_horizontal", Control.SIZE_EXPAND_FILL if params.set[property] else Control.SIZE_SHRINK_CENTER)
+			elif property == &"expand_vertical" and &"size_flags_vertical" in element:
+				element.set(&"size_flags_vertical", Control.SIZE_EXPAND_FILL if params.set[property] else Control.SIZE_SHRINK_CENTER)
 			elif property == &"data" and element is TextureRect and ResourceLoader.exists(params.set.data):
 				(element as TextureRect).texture = load(params.set.data)
 			else:
@@ -911,7 +1031,7 @@ func _input(event):
 				if (not is_compiling) and (not editor_focused) and (not has_slide_editor):
 					previous_slide()
 			KEY_DOWN:
-				if (not is_compiling) and (not editor_focused) and (not has_slide_editor):
+				if (not has_maze) and (not is_compiling) and (not editor_focused) and (not has_slide_editor):
 					if revealed_elements == current_slide_elements.size():
 						next_slide()
 						await get_tree().process_frame
@@ -920,7 +1040,7 @@ func _input(event):
 							element.skip_typing()
 					reveal_all_elements()
 			KEY_UP:
-				if (not is_compiling) and (not editor_focused) and (not has_slide_editor):
+				if  (not has_maze) and (not is_compiling) and (not editor_focused) and (not has_slide_editor):
 					previous_slide()
 					await get_tree().process_frame
 					reveal_all_elements()
@@ -936,6 +1056,14 @@ func _input(event):
 				if (not is_compiling) and (not editor_focused) and (not has_slide_editor):
 					if event.is_pressed() and (event as InputEventWithModifiers).ctrl_pressed and not editor_focused:
 						DisplayServer.clipboard_set(convert_slide_to_html(last_text_slide))
+			KEY_EQUAL, KEY_PLUS:
+				if event.is_pressed() and (event as InputEventWithModifiers).ctrl_pressed and not editor_focused:
+					default_holder_scale = default_holder_scale + 0.15
+					set_holder_scale(last_set_holder_scale_string)
+			KEY_MINUS:
+				if event.is_pressed() and (event as InputEventWithModifiers).ctrl_pressed and not editor_focused:
+					default_holder_scale = max(0.01, default_holder_scale - 0.1)
+					set_holder_scale(last_set_holder_scale_string)
 
 func swap_fullscreen_mode():
 	if editor_focused and is_instance_valid(current_editor_focused):
@@ -1010,7 +1138,7 @@ func previous_slide():
 static func format_code_block(code: String, _language: String = "csharp") -> String:
 	var formatted_code = code.strip_edges()
 	formatted_code = formatted_code.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-	return '<pre class="line-numbers"><code class="language-csharp">%s</code></pre>\n<br>' % formatted_code
+	return '<pre class="line-numbers d2l-code"><code class="language-csharp">%s</code></pre>\n<br>' % formatted_code
 
 func convert_markdown_to_bbcode(text: String) -> String:
 	var lines = text.split("\n")
@@ -1231,8 +1359,34 @@ static func convert_slide_to_html(slide_content: String) -> String:
 				in_code_block = false
 			if stripped_line.begins_with("# "):
 				html += "<h2><span style=\"color: #2066b8;\">" + convert_bbcode_to_html(stripped_line.substr(2)) + "</span></h2>\n"
+			elif stripped_line.begins_with("#- "):
+				html += "<h2>" + convert_bbcode_to_html(stripped_line.substr(3)) + "</h2>\n"
 			elif stripped_line.begins_with("## "):
 				html += "<h3><span style=\"color: #2066b8;\">" + convert_bbcode_to_html(stripped_line.substr(3)) + "</span></h3>\n"
+			elif stripped_line.begins_with("##- "):
+				html += "<h3>" + convert_bbcode_to_html(stripped_line.substr(4)) + "</h3>\n"
+			elif stripped_line.begins_with("### "):
+				html += "<h4><span style=\"color: #2066b8;\">" + convert_bbcode_to_html(stripped_line.substr(3)) + "</span></h4>\n"
+			elif stripped_line.begins_with("###- "):
+				html += "<h4>" + convert_bbcode_to_html(stripped_line.substr(4)) + "</h4>\n"
+			elif stripped_line.begins_with("#! "):
+				html += "<h2><span style=\"color: #a8382b;\">" + convert_bbcode_to_html(stripped_line.substr(3)) + "</span></h2>\n"
+			elif stripped_line.begins_with("##! "):
+				html += "<h3><span style=\"color: #a8382b;\">" + convert_bbcode_to_html(stripped_line.substr(4)) + "</span></h3>\n"
+			elif stripped_line.begins_with("###! "):
+				html += "<h4><span style=\"color: #a8382b;\">" + convert_bbcode_to_html(stripped_line.substr(4)) + "</span></h4>\n"
+			elif stripped_line.begins_with("#@ "):
+				html += "<h2><span style=\"color: #853a84;\">" + convert_bbcode_to_html(stripped_line.substr(3)) + "</span></h2>\n"
+			elif stripped_line.begins_with("##@ "):
+				html += "<h3><span style=\"color: #853a84;\">" + convert_bbcode_to_html(stripped_line.substr(4)) + "</span></h3>\n"
+			elif stripped_line.begins_with("###@ "):
+				html += "<h4><span style=\"color: #853a84;\">" + convert_bbcode_to_html(stripped_line.substr(4)) + "</span></h4>\n"
+			elif stripped_line.begins_with("#$ "):
+				html += "<h2><span style=\"color: #009B77;\">" + convert_bbcode_to_html(stripped_line.substr(3)) + "</span></h2>\n"
+			elif stripped_line.begins_with("##$ "):
+				html += "<h3><span style=\"color: #009B77;\">" + convert_bbcode_to_html(stripped_line.substr(4)) + "</span></h3>\n"
+			elif stripped_line.begins_with("###$ "):
+				html += "<h4><span style=\"color: #009B77;\">" + convert_bbcode_to_html(stripped_line.substr(4)) + "</span></h4>\n"
 			else:
 				html += convert_bbcode_to_html(stripped_line) + "<br>\n"
 

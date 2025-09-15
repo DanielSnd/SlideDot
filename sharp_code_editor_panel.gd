@@ -49,7 +49,7 @@ func on_tree_exiting():
 	set(v):
 		margin_container.visible = v
 	get:
-		return margin_container.visible
+		return false
 @export var min_size_x:int:
 	set(v):
 		custom_minimum_size.x = v

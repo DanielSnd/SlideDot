@@ -1,0 +1,102 @@
+Generate engaging, interactive slides for a [INSERT_CLASS] class on [INSERT_CLASS_SUBJECT] for a College level Game Development Course. Target duration: 2 hour class session (Not the whole 2 hour class needs to be slides, part of it can be exercises, time for coding, questions, etc.).
+
+```
+Text Formatting:
+- # for H1, ## for H2, ### for H3 (optionally #- or ##- or ###- does gray color with those H1/H2/H3, #! ##! ###! red color, #$, ##$, ###$ green color, #@, ##@, ###@ purple color)
+- **bold**
+- ~~strikethrough~~
+- ~^wavy text^~
+- ^^ colored text ^^ (always blue)
+- [color=#RRGGBB]colored text[/color]
+
+Color Semantic Usage (for H1, H2, H3):
+- Red (#!) for warnings, important concepts, or common pitfalls
+- Green (#$) for best practices, tips, or successful outcomes
+- Purple (#@) for definitions or key terminology
+- Blue (#) for code-related concepts or technical terms
+- Gray (#-) for additional context or side notes
+
+Image Handling:
+- Suggest image placements using "=> LeftImage" or "=> RightImage" with descriptions
+- Describe needed diagrams or visual aids in comments like: // Need: Class inheritance diagram
+- Recommend places for images that would help explain:
+  * Code output examples
+  * Visual diagrams
+  * UI mockups
+  * Flow charts
+- Use // [placeholder] comments to indicate where custom screenshots or demos should go (the // in the beginning of the line makes the line be treated as a comment and not be shown in the slide)
+
+Layout Tips:
+- Use HBox for horizontal layouts with [alignment=X] where X is 0 (left), 1 (center), 2 (right)
+- Use VBox for vertical layouts with custom spacing: [theme_override_constants/separation=20]
+- For important code examples, use larger font: => Code [code_font_size=24]
+- Use [expand_horizontal=true/false] and [expand_vertical=true/false] for control over element sizing
+
+Interactive Elements:
+- Add pauses ( || ||) before revealing key concepts or answers
+
+Text Attributes:
+=> Text [font_size = X]
+Where X is the desired font size. The default for a good side is about 28~32. A new text is not needed to change font_size, it's possible to change the font size with bbcode within the text itself [font_size=42]Like this[/font_size]. Never start a slide with => Text, there's an implicit one at the start so adding a second explicit one can cause problems. Adding parameters to text is also optional, it has implicit default parameters.
+IMPORTANT: NEVER START A NEW SLIDE WITH => TEXT! THE FIRST ONE IS IMPLICIT AND IS THERE BY DEFAULT IN THE PROGRAM SIDE! DON'T ADD AN INITIAL => TEXT
+
+Lists:
+- List Item 1
+- List Item 2
+
+Code Blocks:
+=> Code [options]
+code here
+
+Options can include: code_font_size=X, min_size_y=Y
+
+For side-by-side content:
+=> HBox
+=> Text
+Content 1
+=> Text
+Content 2
+=> EndHBox
+
+Tables:
+| Header 1 | Header 2 |
+| -------- | -------- |
+| Cell 1   | Cell 2   |
+
+Slide Pauses:
+Use " || ||" to indicate a pause in the slide animation, typically at the end of sentences or list items.
+
+Slide Separation:
+=========================== SlideFilename (it automatically saves the slides with those filenames, this filename is not visible in the slideshow. If this slide specifically is a part of the BOPPPS model indicate which part of the BOPPPS model it is on the filename)
+
+After ending a Hbox with "=> EndHBox" or finishing the last line of code after a "=> Code" you need to start a new "=> Text".
+
+```
+
+Key Points:
+1. Build knowledge alongside students by asking questions and waiting for their input.
+2. Use "=> Text [font_size = X]" before questions to emphasize them.
+3. End each slide with a thought-provoking question to encourage participation.
+4. Use formatting (bold, color, wavy text) to highlight important concepts or keywords.
+5. Incorporate lists, tables, and code blocks when relevant to the topic.
+6. Use slide pauses ("|| ||") strategically to control information flow.
+7. Keep code examples concise and focused on one concept at a time
+8. Include real-world game development scenarios and examples
+9. Break complex topics into digestible chunks with clear transitions
+
+Slide Structure Guidelines:
+1. Each major concept should span 3-5 slides maximum
+2. Code examples should be preceded by conceptual explanation
+3. After each code example, include expected output or behavior
+4. Use progressive disclosure - build complexity gradually
+5. Include periodic quick review slides for key concepts
+
+BOPPPS Integration:
+- Bridge-in: Use relevant game examples or industry problems
+- Objectives: List 2-3 clear, measurable learning outcomes
+- Pre-assessment: Include questions to gauge prior knowledge
+- Participatory Learning: Mix theory, code examples, and exercises
+- Post-assessment: Include practical code challenges
+- Summary: Reinforce key takeaways and their practical applications
+
+Create an engaging, interactive learning experience that encourages student participation and gradually builds understanding of the topic. Provide all of the slides in one single code block. Consider using the BOPPPS model for lesson planning when appropriate.

@@ -14,6 +14,9 @@ func _ready():
 	popupmenu.add_icon_item(load("res://addons/cider_wiki/icons/icon_create.svg"),"New")
 	popupmenu.add_icon_item(load("res://addons/cider_wiki/icons/icon_save.svg"),"Save")
 	popupmenu.add_icon_item(load("res://addons/cider_wiki/icons/icon_save.svg"),"Save as")
+	popupmenu.add_icon_item(load("res://addons/cider_wiki/icons/icon_save.svg"),"Save All")
+	popupmenu.add_item("Reload All")
+	popupmenu.add_item("Load Folder")
 	popupmenu.add_item("Quiz Maker")
 	popupmenu.add_item("Slide Importer")
 	popupmenu.index_pressed.connect(file_menu_index_pressed.bind(popupmenu))
@@ -101,6 +104,18 @@ func open_file_path(file_path:String, cached_edited_path:Dictionary):
 	else:
 		code_edit.text = file.get_as_text()
 
+func save_all_files():
+	for path in ref_to_cached_edited_path:
+		if not DirAccess.dir_exists_absolute(path.get_base_dir()):
+			DirAccess.make_dir_recursive_absolute(path.get_base_dir())
+		if FileAccess.file_exists(path):
+			DirAccess.remove_absolute(path)
+		var file = FileAccess.open(path, FileAccess.WRITE_READ)
+		file.store_string(ref_to_cached_edited_path[path])
+		print("Saved file: ", path)
+
+
+
 func file_menu_index_pressed(index: int,popup:PopupMenu):
 	var pressed :String = popup.get_item_text(index)
 	#print (pressed)
@@ -115,8 +130,23 @@ func file_menu_index_pressed(index: int,popup:PopupMenu):
 		var file = FileAccess.open(currently_editing_path,FileAccess.WRITE_READ)
 		file.store_string(code_edit.text)
 		print("Saved at ",currently_editing_path)
+	elif pressed == "Save All":
+		save_all_files()
 	elif pressed == "Save as":
 		open_save_dialog()
+	elif pressed == "Reload All":
+		get_tree().change_scene_to_file("res://main.tscn")
+	elif pressed == "Load Folder":
+		# Configure FileDialog for folder selection
+		file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_DIR
+		file_dialog.current_dir = SlideManager.slidesdirabsolute
+		file_dialog.popup_centered_ratio(0.7)
+		# Wait for folder selection
+		var folder = await file_dialog.dir_selected
+		SlideManager.slidesdirabsolute = folder + "\\"
+		get_tree().change_scene_to_file("res://main.tscn")
+		# Reset file dialog settings
+		file_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
 	elif pressed == "Quiz Maker":
 		get_tree().change_scene_to_file("res://quiz_converter.tscn")
 	elif pressed == "Slide Importer":
